@@ -1,0 +1,4 @@
+# Install only in the model worker after choosing the appropriate CPU/GPU wheels.
+-r requirements.txt
+torch==2.8.0
+torchvision==0.23.0

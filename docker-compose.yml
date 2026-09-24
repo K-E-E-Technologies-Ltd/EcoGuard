@@ -1,0 +1,78 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: ecoguard
+      POSTGRES_USER: ecoguard
+      POSTGRES_PASSWORD: change-me-in-production
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecoguard -d ecoguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+  backend:
+    image: ecoguard-backend
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://ecoguard:change-me-in-production@db:5432/ecoguard
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: development
+      AUTO_CREATE_TABLES: "true"
+      ENABLE_API_DOCS: "true"
+      ALLOWED_ORIGINS: http://localhost:5173
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports: ["8000:8000"]
+    volumes: ["media:/app/var/media"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/ready',timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+  worker:
+    image: ecoguard-backend
+    command: ["celery", "-A", "app.worker.celery_app", "worker", "--beat", "--loglevel=INFO"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://ecoguard:change-me-in-production@db:5432/ecoguard
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: development
+      AUTO_CREATE_TABLES: "false"
+      ALLOWED_ORIGINS: http://localhost:5173
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes: ["media:/app/var/media"]
+    restart: unless-stopped
+  frontend:
+    image: ecoguard-frontend
+    build: ./frontend
+    environment:
+      VITE_API_BASE_URL: /api/v1
+      API_PROXY_TARGET: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports: ["5173:5173"]
+    restart: unless-stopped
+volumes:
+  pgdata:
+  media:
