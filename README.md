@@ -2,6 +2,20 @@
 
 This package is the implementation companion to the EcoGuard Uganda mobile/desktop design deck. It keeps **wildlife detection and human verification** as the primary workflow and also includes wetland and flood reporting.
 
+## Live deployment
+
+| | |
+|---|---|
+| Web app | https://ecoguard-app.vercel.app |
+| API | https://ecoguard-api.vercel.app |
+| API docs (Swagger) | https://ecoguard-api.vercel.app/api/docs |
+| Health check | https://ecoguard-api.vercel.app/health |
+
+Deployed from the private [`ecoguard-frontend`](https://github.com/K-E-E-Technologies-Ltd/ecoguard-frontend) and
+[`ecoguard-backend`](https://github.com/K-E-E-Technologies-Ltd/ecoguard-backend) repositories via GitHub Actions; this
+repository holds the combined source. Image assistance reports `degraded` until an operator installs
+`requirements-ml.txt` and configures the SpeciesNet checkpoint.
+
 ## Stack
 - Frontend: React 19 + TypeScript + Vite
 - Backend: FastAPI + SQLAlchemy 2 + Pydantic
